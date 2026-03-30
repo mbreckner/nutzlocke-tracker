@@ -1,13 +1,15 @@
 ---
+import '../styles/global.css';
+import PokemonTracker from '../components/PokemonTracker';
 ---
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Nutzlocke Tracker</title>
+    <title>Nuzlocke Tracker</title>
   </head>
-  <body>
-    <p>Your nutzlocke tracker is running</p>
+  <body class="bg-gray-950">
+    <PokemonTracker client:load />
   </body>
 </html>
