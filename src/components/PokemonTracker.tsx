@@ -3,21 +3,33 @@ import type { Pokemon, PokemonEntry, Game, PokemonStatus, SortField, SortDir } f
 import { STATUS_LABELS, STATUS_COLORS, TYPE_COLORS, GENERATIONS } from '../utils/constants';
 import pokemonData from '../data/pokemon.json';
 
-// ── Local-storage helpers ────────────────────────────────────────────────────
+// ── KV API helpers ────────────────────────────────────────────────────────────
 
-function loadStatuses(): Record<number, { status: PokemonStatus; game_id?: string }> {
-  try { return JSON.parse(localStorage.getItem('nuzlocke_statuses') ?? '{}'); }
-  catch { return {}; }
+async function fetchStatuses(): Promise<Record<number, { status: PokemonStatus; game_id?: string }>> {
+  const res = await fetch('/api/statuses');
+  if (!res.ok) throw new Error(`Failed to load statuses: ${res.status}`);
+  return res.json();
 }
-function saveStatuses(s: Record<number, { status: PokemonStatus; game_id?: string }>) {
-  localStorage.setItem('nuzlocke_statuses', JSON.stringify(s));
+async function persistStatuses(s: Record<number, { status: PokemonStatus; game_id?: string }>) {
+  const res = await fetch('/api/statuses', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(s),
+  });
+  if (!res.ok) throw new Error(`Failed to save statuses: ${res.status}`);
 }
-function loadGames(): Game[] {
-  try { return JSON.parse(localStorage.getItem('nuzlocke_games') ?? '[]'); }
-  catch { return []; }
+async function fetchGames(): Promise<Game[]> {
+  const res = await fetch('/api/games');
+  if (!res.ok) throw new Error(`Failed to load games: ${res.status}`);
+  return res.json();
 }
-function saveGames(g: Game[]) {
-  localStorage.setItem('nuzlocke_games', JSON.stringify(g));
+async function persistGames(g: Game[]) {
+  const res = await fetch('/api/games', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(g),
+  });
+  if (!res.ok) throw new Error(`Failed to save games: ${res.status}`);
 }
 
 // ── Status badge ─────────────────────────────────────────────────────────────
@@ -352,7 +364,7 @@ function PokemonTable({ entries, games, onChangeStatus }: PokemonTableProps) {
 interface PokemonTabProps {
   entries: PokemonEntry[];
   games: Game[];
-  onChangeStatus: (id: number, status: PokemonStatus, gameId?: string) => void;
+  onChangeStatus: (id: number, status: PokemonStatus, gameId?: string) => Promise<void>;
 }
 
 function PokemonTab({ entries, games, onChangeStatus }: PokemonTabProps) {
@@ -528,11 +540,17 @@ export default function PokemonTracker() {
   const [tab, setTab] = useState<'pokemon' | 'games'>('pokemon');
   const [statuses, setStatuses] = useState<Record<number, { status: PokemonStatus; game_id?: string }>>({});
   const [games, setGames] = useState<Game[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
-  // Hydrate from localStorage after mount
+  // Load from KV on mount
   useEffect(() => {
-    setStatuses(loadStatuses());
-    setGames(loadGames());
+    Promise.all([fetchStatuses(), fetchGames()])
+      .then(([s, g]) => { setStatuses(s); setGames(g); })
+      .catch((err) => setLoadError(String(err)))
+      .finally(() => setLoading(false));
   }, []);
 
   const entries: PokemonEntry[] = (pokemonData as Pokemon[]).map((p) => ({
@@ -542,43 +560,57 @@ export default function PokemonTracker() {
   }));
 
   const handleChangeStatus = useCallback(
-    (id: number, status: PokemonStatus, gameId?: string) => {
-      setStatuses((prev) => {
-        const next = { ...prev, [id]: { status, game_id: gameId } };
-        saveStatuses(next);
-        return next;
-      });
+    async (id: number, status: PokemonStatus, gameId?: string) => {
+      const next = { ...statuses, [id]: { status, game_id: gameId } };
+      setStatuses(next);          // optimistic update
+      setSaving(true);
+      setSaveError(null);
+      try {
+        await persistStatuses(next);
+      } catch (err) {
+        setSaveError(String(err));
+      } finally {
+        setSaving(false);
+      }
     },
-    [],
+    [statuses],
   );
 
-  const handleSaveGame = useCallback((game: Game) => {
-    setGames((prev) => {
-      const existing = prev.findIndex((g) => g.id === game.id);
-      const next = existing >= 0 ? prev.map((g) => g.id === game.id ? game : g) : [...prev, game];
-      saveGames(next);
-      return next;
-    });
-  }, []);
+  const handleSaveGame = useCallback(async (game: Game) => {
+    const next = games.findIndex((g) => g.id === game.id) >= 0
+      ? games.map((g) => g.id === game.id ? game : g)
+      : [...games, game];
+    setGames(next);
+    setSaving(true);
+    setSaveError(null);
+    try {
+      await persistGames(next);
+    } catch (err) {
+      setSaveError(String(err));
+    } finally {
+      setSaving(false);
+    }
+  }, [games]);
 
-  const handleDeleteGame = useCallback((id: string) => {
-    setGames((prev) => {
-      const next = prev.filter((g) => g.id !== id);
-      saveGames(next);
-      return next;
-    });
-    // Clear game references from statuses
-    setStatuses((prev) => {
-      const next = { ...prev };
-      for (const key of Object.keys(next)) {
-        if (next[Number(key)].game_id === id) {
-          next[Number(key)] = { ...next[Number(key)], game_id: undefined };
-        }
-      }
-      saveStatuses(next);
-      return next;
-    });
-  }, []);
+  const handleDeleteGame = useCallback(async (id: string) => {
+    const nextGames = games.filter((g) => g.id !== id);
+    const nextStatuses = Object.fromEntries(
+      Object.entries(statuses).map(([k, v]) =>
+        v.game_id === id ? [k, { ...v, game_id: undefined }] : [k, v]
+      )
+    ) as typeof statuses;
+    setGames(nextGames);
+    setStatuses(nextStatuses);
+    setSaving(true);
+    setSaveError(null);
+    try {
+      await Promise.all([persistGames(nextGames), persistStatuses(nextStatuses)]);
+    } catch (err) {
+      setSaveError(String(err));
+    } finally {
+      setSaving(false);
+    }
+  }, [games, statuses]);
 
   // Summary counts
   const used = entries.filter((e) => e.status === 'USED').length;
@@ -597,7 +629,16 @@ export default function PokemonTracker() {
               <p className="text-gray-400 text-xs">Verfolge deine Pokémon über alle Runs hinweg</p>
             </div>
           </div>
-          <div className="sm:ml-auto flex gap-4 text-sm">
+          <div className="sm:ml-auto flex items-center gap-4 text-sm">
+            {saving && (
+              <span className="flex items-center gap-1.5 text-amber-400 text-xs animate-pulse">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block" />
+                Speichert…
+              </span>
+            )}
+            {saveError && (
+              <span className="text-red-400 text-xs" title={saveError}>⚠ Fehler beim Speichern</span>
+            )}
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-red-500 inline-block" />
               <span className="text-gray-300">{used} Verwendet</span>
@@ -638,16 +679,37 @@ export default function PokemonTracker() {
 
       {/* Content */}
       <main className="max-w-screen-2xl mx-auto">
-        {tab === 'pokemon' && (
-          <PokemonTab entries={entries} games={games} onChangeStatus={handleChangeStatus} />
-        )}
-        {tab === 'games' && (
-          <GamesTab
-            games={games}
-            statuses={statuses}
-            onSave={handleSaveGame}
-            onDelete={handleDeleteGame}
-          />
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-32 gap-4 text-gray-500">
+            <div className="w-10 h-10 border-4 border-gray-700 border-t-red-500 rounded-full animate-spin" />
+            <p>Lade Daten…</p>
+          </div>
+        ) : loadError ? (
+          <div className="flex flex-col items-center justify-center py-32 gap-3 text-red-400">
+            <p className="text-4xl">⚠</p>
+            <p className="font-semibold">Fehler beim Laden der Daten</p>
+            <p className="text-sm text-gray-500">{loadError}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="mt-2 px-4 py-2 rounded-lg bg-red-700 hover:bg-red-600 text-white text-sm transition"
+            >
+              Neu laden
+            </button>
+          </div>
+        ) : (
+          <>
+            {tab === 'pokemon' && (
+              <PokemonTab entries={entries} games={games} onChangeStatus={handleChangeStatus} />
+            )}
+            {tab === 'games' && (
+              <GamesTab
+                games={games}
+                statuses={statuses}
+                onSave={handleSaveGame}
+                onDelete={handleDeleteGame}
+              />
+            )}
+          </>
         )}
       </main>
     </div>

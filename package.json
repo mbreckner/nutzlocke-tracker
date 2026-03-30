@@ -6,9 +6,11 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "fetch-pokemon": "node scripts/fetch-pokemon-data.mjs"
+    "fetch-pokemon": "node scripts/fetch-pokemon-data.mjs",
+    "deploy": "astro build && wrangler pages deploy dist"
   },
   "dependencies": {
+    "@astrojs/cloudflare": "^13.1.4",
     "@astrojs/react": "^5.0.2",
     "@astrojs/tailwind": "^6.0.2",
     "astro": "^6.1.1",
@@ -16,9 +18,11 @@
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "tailwindcss": "^3.4.19",
-    "undici": "^7.24.6"
+    "undici": "^7.24.6",
+    "wrangler": "^4.78.0"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260329.1",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3"
   }
