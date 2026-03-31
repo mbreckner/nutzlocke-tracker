@@ -4,7 +4,7 @@
   "version": "0.0.1",
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build && node -e \"require('fs').rmSync('dist/server/wrangler.json',{force:true})\"",
+    "build": "astro build && node scripts/patch-cloudflare-wrangler.cjs",
     "preview": "astro preview",
     "fetch-pokemon": "node scripts/fetch-pokemon-data.mjs",
     "deploy": "npm run build && wrangler pages deploy dist"
