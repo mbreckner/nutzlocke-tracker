@@ -25,12 +25,14 @@ export const STATUS_LABELS: Record<string, string> = {
   OPEN: 'Offen',
   USED: 'Verwendet',
   USED_AND_WILL_BE_OPENED_LATER: 'Später wieder offen',
+  LEGENDARY: 'Legendär',
 };
 
 export const STATUS_COLORS: Record<string, string> = {
   OPEN: 'bg-green-600 text-white',
   USED: 'bg-red-600 text-white',
   USED_AND_WILL_BE_OPENED_LATER: 'bg-amber-500 text-black',
+  LEGENDARY: 'bg-purple-600 text-white',
 };
 
 export const GENERATIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9];

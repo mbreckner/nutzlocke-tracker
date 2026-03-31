@@ -1,4 +1,4 @@
-export type PokemonStatus = 'OPEN' | 'USED' | 'USED_AND_WILL_BE_OPENED_LATER';
+export type PokemonStatus = 'OPEN' | 'USED' | 'USED_AND_WILL_BE_OPENED_LATER' | 'LEGENDARY';
 
 export interface Pokemon {
   id: number;

@@ -79,7 +79,7 @@ function StatusModal({ pokemon, games, onSave, onClose }: StatusModalProps) {
         </p>
 
         <div className="space-y-2 mb-4">
-          {(['OPEN', 'USED', 'USED_AND_WILL_BE_OPENED_LATER'] as PokemonStatus[]).map((s) => (
+          {(['OPEN', 'USED', 'USED_AND_WILL_BE_OPENED_LATER', 'LEGENDARY'] as PokemonStatus[]).map((s) => (
             <label key={s} className="flex items-center gap-3 cursor-pointer group">
               <input
                 type="radio"
@@ -262,7 +262,7 @@ function PokemonTable({ entries, games, onChangeStatus }: PokemonTableProps) {
       case 'generation': cmp = a.generation - b.generation; break;
       case 'bst':        cmp = a.bst - b.bst; break;
       case 'status': {
-        const order = { OPEN: 0, USED_AND_WILL_BE_OPENED_LATER: 1, USED: 2 };
+        const order = { OPEN: 0, USED_AND_WILL_BE_OPENED_LATER: 1, USED: 2, LEGENDARY: 3 };
         cmp = order[a.status] - order[b.status];
         break;
       }
@@ -616,6 +616,7 @@ export default function PokemonTracker() {
   const used = entries.filter((e) => e.status === 'USED').length;
   const later = entries.filter((e) => e.status === 'USED_AND_WILL_BE_OPENED_LATER').length;
   const open = entries.filter((e) => e.status === 'OPEN').length;
+  const legendary = entries.filter((e) => e.status === 'LEGENDARY').length;
 
   return (
     <div className="min-h-screen bg-gray-950 text-gray-100 font-sans">
@@ -646,6 +647,10 @@ export default function PokemonTracker() {
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block" />
               <span className="text-gray-300">{later} Später offen</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-purple-500 inline-block" />
+              <span className="text-gray-300">{legendary} Legendär</span>
             </div>
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-green-500 inline-block" />
