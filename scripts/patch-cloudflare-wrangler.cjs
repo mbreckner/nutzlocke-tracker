@@ -22,22 +22,21 @@ if (!fs.existsSync(WRANGLER_JSON)) {
 const config = JSON.parse(fs.readFileSync(WRANGLER_JSON, 'utf8'));
 
 // 1. Remove ASSETS binding — Cloudflare Pages reserves this name.
-//    Static assets are served automatically by the Pages CDN; no explicit
-//    binding declaration is needed.
 delete config.assets;
 
-// 2. Remove empty triggers object — Pages validator requires the object to
-//    contain only a "crons" property, or be absent entirely.
-if (config.triggers !== undefined) {
-  delete config.triggers;
-}
+// 2. Remove empty triggers object — must be absent or { crons: [] }.
+delete config.triggers;
 
-// 3. Remove all KV namespace entries.
-//    The SESSION binding (added by the adapter) has no ID, which fails
-//    validation.  NUZLOCKE_KV has only a placeholder ID; the real binding
-//    is configured in the Cloudflare Pages dashboard and does not need to
-//    be declared here for production deployments.
+// 3. Remove all KV namespace entries — real bindings live in the dashboard.
 delete config.kv_namespaces;
+
+// 4. Pages projects cannot have both "pages_build_output_dir" and "main".
+//    This file is the server Worker config so keep "main" and drop the dir.
+delete config.pages_build_output_dir;
+
+// 5. "rules" and "no_bundle" are Worker-only fields not valid for Pages.
+delete config.rules;
+delete config.no_bundle;
 
 fs.writeFileSync(WRANGLER_JSON, JSON.stringify(config, null, 2), 'utf8');
 console.log('✓ Patched dist/server/wrangler.json for Cloudflare Pages compatibility.');
