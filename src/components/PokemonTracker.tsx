@@ -389,7 +389,9 @@ function PokemonTab({ entries, games, onChangeStatus }: PokemonTabProps) {
     ) return false;
     if (filterGens.size > 0 && !filterGens.has(e.generation)) return false;
     if (filterStatus && e.status !== filterStatus) return false;
-    if (filterGame && e.used_in_game !== filterGame) return false;
+    if (filterGame === 'NO_GAME') {
+      if (e.used_in_game) return false;
+    } else if (filterGame && e.used_in_game !== filterGame) return false;
     return true;
   });
 
@@ -447,6 +449,7 @@ function PokemonTab({ entries, games, onChangeStatus }: PokemonTabProps) {
           className="bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
         >
           <option value="">Alle Spiele</option>
+          <option value="NO_GAME">Kein Spiel</option>
           {games.map((g) => (
             <option key={g.id} value={g.id}>Gen {g.generation} – {g.name}{!g.vanilla ? ' ✦' : ''}</option>
           ))}
