@@ -315,7 +315,7 @@ function PokemonTable({ entries, games, onChangeStatus }: PokemonTableProps) {
                 </td>
                 <td className="px-3 py-2 font-medium text-white">
                   <a
-                    href={entry.bisafans_url}
+                    href={`https://www.bisafans.de/pokedex/${entry.id}.php`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="hover:text-red-400 transition underline underline-offset-2"
@@ -369,9 +369,17 @@ interface PokemonTabProps {
 
 function PokemonTab({ entries, games, onChangeStatus }: PokemonTabProps) {
   const [search, setSearch] = useState('');
-  const [filterGen, setFilterGen] = useState<string>('');
+  const [filterGens, setFilterGens] = useState<Set<number>>(new Set());
   const [filterStatus, setFilterStatus] = useState<string>('');
+  const [filterGame, setFilterGame] = useState<string>('');
   const [modalEntry, setModalEntry] = useState<PokemonEntry | null>(null);
+
+  const toggleGen = (g: number) =>
+    setFilterGens((prev) => {
+      const next = new Set(prev);
+      next.has(g) ? next.delete(g) : next.add(g);
+      return next;
+    });
 
   const filtered = entries.filter((e) => {
     if (
@@ -379,8 +387,9 @@ function PokemonTab({ entries, games, onChangeStatus }: PokemonTabProps) {
       !e.name_de.toLowerCase().includes(search.toLowerCase()) &&
       !e.name_en.toLowerCase().includes(search.toLowerCase())
     ) return false;
-    if (filterGen && e.generation !== Number(filterGen)) return false;
+    if (filterGens.size > 0 && !filterGens.has(e.generation)) return false;
     if (filterStatus && e.status !== filterStatus) return false;
+    if (filterGame && e.used_in_game !== filterGame) return false;
     return true;
   });
 
@@ -400,14 +409,30 @@ function PokemonTab({ entries, games, onChangeStatus }: PokemonTabProps) {
           onChange={(e) => setSearch(e.target.value)}
           className="flex-1 min-w-[200px] bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500"
         />
-        <select
-          value={filterGen}
-          onChange={(e) => setFilterGen(e.target.value)}
-          className="bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
-        >
-          <option value="">Alle Generationen</option>
-          {GENERATIONS.map((g) => <option key={g} value={g}>Gen {g}</option>)}
-        </select>
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {GENERATIONS.map((g) => (
+            <button
+              key={g}
+              onClick={() => toggleGen(g)}
+              className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition ${
+                filterGens.has(g)
+                  ? 'bg-red-600 text-white'
+                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+              }`}
+            >
+              Gen {g}
+            </button>
+          ))}
+          {filterGens.size > 0 && (
+            <button
+              onClick={() => setFilterGens(new Set())}
+              className="px-2 py-1.5 rounded-lg text-xs text-gray-400 hover:text-white hover:bg-gray-700 transition"
+              title="Filter zurücksetzen"
+            >
+              ✕
+            </button>
+          )}
+        </div>
         <select
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value)}
@@ -415,6 +440,16 @@ function PokemonTab({ entries, games, onChangeStatus }: PokemonTabProps) {
         >
           <option value="">Alle Status</option>
           {Object.entries(STATUS_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+        </select>
+        <select
+          value={filterGame}
+          onChange={(e) => setFilterGame(e.target.value)}
+          className="bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:ring-2 focus:ring-red-500"
+        >
+          <option value="">Alle Spiele</option>
+          {games.map((g) => (
+            <option key={g.id} value={g.id}>Gen {g.generation} – {g.name}{!g.vanilla ? ' ✦' : ''}</option>
+          ))}
         </select>
         <span className="flex items-center text-gray-400 text-sm">
           {filtered.length} / {entries.length} Pokémon
