@@ -315,7 +315,7 @@ function PokemonTable({ entries, games, onChangeStatus }: PokemonTableProps) {
                 </td>
                 <td className="px-3 py-2 font-medium text-white">
                   <a
-                    href={`https://www.bisafans.de/pokedex/${entry.id}.php`}
+                    href={`https://www.bisafans.de/pokedex/${String(entry.id).padStart(3, '0')}.php`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="hover:text-red-400 transition underline underline-offset-2"
