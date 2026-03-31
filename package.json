@@ -4,10 +4,10 @@
   "version": "0.0.1",
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build",
+    "build": "astro build && node -e \"require('fs').rmSync('dist/server/wrangler.json',{force:true})\"",
     "preview": "astro preview",
     "fetch-pokemon": "node scripts/fetch-pokemon-data.mjs",
-    "deploy": "astro build && wrangler pages deploy dist"
+    "deploy": "npm run build && wrangler pages deploy dist"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^13.1.4",
