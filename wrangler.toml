@@ -4,15 +4,17 @@ pages_build_output_dir = "dist"
 
 # KV namespace for Pokémon statuses and game runs.
 #
-# Local dev (astro dev / wrangler pages dev):
-#   miniflare creates an in-memory/on-disk KV automatically — no real ID needed.
+# Local dev (astro dev):
+#   platformProxy + miniflare creates a local KV automatically.
+#   The id below is only used for `wrangler pages dev` (not needed for `astro dev`).
 #
 # Production (Cloudflare Pages):
-#   1. Create a KV namespace in the Cloudflare dashboard (or via Wrangler):
-#        wrangler kv namespace create NUZLOCKE_KV
-#   2. Replace the placeholder `id` below with the real namespace ID.
-#   3. Go to Pages project → Settings → Functions → KV namespace bindings
-#      and add binding  NUZLOCKE_KV → <your namespace>.
+#   The binding is configured in the Cloudflare Dashboard under
+#   Pages project → Settings → Functions → KV namespace bindings.
+#   You do NOT need to change the id here for production – the dashboard
+#   binding takes precedence.
+#   If you want `wrangler pages dev` to use your real KV, replace the
+#   placeholder id with the one from:  wrangler kv namespace create NUZLOCKE_KV
 [[kv_namespaces]]
 binding = "NUZLOCKE_KV"
 id = "00000000000000000000000000000000"
