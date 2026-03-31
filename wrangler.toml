@@ -3,14 +3,8 @@ compatibility_date = "2024-09-23"
 pages_build_output_dir = "dist"
 
 # KV namespace for Pokémon statuses and game runs.
-#
-# Production (Cloudflare Pages):
-#   The binding is configured in the Cloudflare Dashboard:
+# The binding is configured in the Cloudflare Pages Dashboard:
 #   Pages → Settings → Functions → KV namespace bindings → NUZLOCKE_KV
 #
-# Local preview (npm run preview = wrangler pages dev dist):
-#   Replace the id with your real namespace ID for testing against real KV data.
-#   Or use a local KV via wrangler kv namespace create NUZLOCKE_KV --local
-[[kv_namespaces]]
-binding = "NUZLOCKE_KV"
-id = "00000000000000000000000000000000"
+# For local preview with `npm run preview` (wrangler pages dev dist):
+#   wrangler pages dev dist --kv NUZLOCKE_KV
