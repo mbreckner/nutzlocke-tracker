@@ -7,12 +7,10 @@ pages_build_output_dir = "dist"
 # Production (Cloudflare Pages):
 #   The binding is configured in the Cloudflare Dashboard:
 #   Pages → Settings → Functions → KV namespace bindings → NUZLOCKE_KV
-#   No ID is needed here for production.
 #
-# Local dev (astro dev):
-#   platformProxy + miniflare simulates KV automatically.
-#   Optionally replace the id with your real namespace ID for
-#   `wrangler pages dev` testing against real KV data.
+# Local preview (npm run preview = wrangler pages dev dist):
+#   Replace the id with your real namespace ID for testing against real KV data.
+#   Or use a local KV via wrangler kv namespace create NUZLOCKE_KV --local
 [[kv_namespaces]]
 binding = "NUZLOCKE_KV"
 id = "00000000000000000000000000000000"

@@ -4,8 +4,8 @@
   "version": "0.0.1",
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build && node scripts/patch-cloudflare-wrangler.cjs",
-    "preview": "astro preview",
+    "build": "astro build",
+    "preview": "wrangler pages dev dist",
     "fetch-pokemon": "node scripts/fetch-pokemon-data.mjs",
     "deploy": "npm run build && wrangler pages deploy dist"
   },
