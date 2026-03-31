@@ -21,8 +21,16 @@ if (!fs.existsSync(WRANGLER_JSON)) {
 
 const config = JSON.parse(fs.readFileSync(WRANGLER_JSON, 'utf8'));
 
-// 1. Remove ASSETS binding — Cloudflare Pages reserves this name.
-delete config.assets;
+// 1. "ASSETS" is a reserved binding name in Pages — remove just the binding
+//    declaration but keep assets.directory so Cloudflare Pages knows where
+//    to find the static files built by the adapter (dist/client/).
+//    Pages automatically provides the ASSETS binding to the Worker at runtime.
+if (config.assets) {
+  delete config.assets.binding;
+  if (Object.keys(config.assets).length === 0) {
+    delete config.assets;
+  }
+}
 
 // 2. Remove empty triggers object — must be absent or { crons: [] }.
 delete config.triggers;
